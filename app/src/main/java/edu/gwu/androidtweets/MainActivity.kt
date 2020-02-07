@@ -1,6 +1,8 @@
 package edu.gwu.androidtweets
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
@@ -10,6 +12,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,6 +45,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val preferences: SharedPreferences = getSharedPreferences(
+            "android-tweets",
+            Context.MODE_PRIVATE
+        )
+
         // Tells Android which layout file should be used for this screen.
         setContentView(R.layout.activity_main)
 
@@ -57,6 +65,16 @@ class MainActivity : AppCompatActivity() {
         login.setOnClickListener { view: View ->
             Log.d("MainActivity", "onClick() called")
 
+            // Save user credentials to file
+            val inputtedUsername: String = username.text.toString()
+            val inputtedPassword: String = password.text.toString()
+
+            preferences
+                .edit()
+                .putString("username", inputtedUsername)
+                .putString("password", inputtedPassword)
+                .apply()
+
             // An Intent is used to start a new Activity and also send data to it (via `putExtra(...)`)
             val intent: Intent = Intent(this, TweetsActivity::class.java)
             intent.putExtra("LOCATION", "Richmond")
@@ -69,6 +87,15 @@ class MainActivity : AppCompatActivity() {
 
         username.addTextChangedListener(textWatcher)
         password.addTextChangedListener(textWatcher)
+
+        val savedUsername = preferences.getString("username", "")
+        val savedPassword = preferences.getString("password", "")
+
+        // By calling setText now, *after* having called addTextChangedListener above, causes my TextWatcher
+        // code to execute. This is useful because it runs the logic to enable / disable the Login button,
+        // so that it will be enabled if I fill the username / password from SharedPreferences.
+        username.setText(savedUsername)
+        password.setText(savedPassword)
     }
 
     // Another example of explicitly implementing an interface (TextWatcher). We cannot use
