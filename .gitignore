@@ -12,3 +12,6 @@
 /captures
 .externalNativeBuild
 .cxx
+
+#Normally you would have uncommented this to allow the XML file to not be tracked by git
+#google_maps_api.xml

@@ -1,0 +1,8 @@
+<resources>
+    <!--
+    We'll talk about debug vs. release builds later in the semester. This file is meant for you to put
+    a separate API key, to be used by the end users of your app after its published to the app store.
+    (e.g. to separate your debug / development traffic from your "real" user production environment).
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">YOUR_KEY_HERE</string>
+</resources>
