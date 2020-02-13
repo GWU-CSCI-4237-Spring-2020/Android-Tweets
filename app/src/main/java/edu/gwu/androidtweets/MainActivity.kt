@@ -12,7 +12,6 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
-import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
@@ -76,8 +75,7 @@ class MainActivity : AppCompatActivity() {
                 .apply()
 
             // An Intent is used to start a new Activity and also send data to it (via `putExtra(...)`)
-            val intent: Intent = Intent(this, TweetsActivity::class.java)
-            intent.putExtra("LOCATION", "Richmond")
+            val intent: Intent = Intent(this, MapsActivity::class.java)
             startActivity(intent)
         }
 

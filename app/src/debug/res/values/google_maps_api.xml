@@ -1,0 +1,10 @@
+<resources>
+    <!--
+    This is similar to the strings.xml file, except we only put sensitive API keys (e.g. Google's keys) in this file.
+    This allows us to also add this file to our .gitignore file to avoid checking it into GitHub.
+
+    Generally you would NOT check your API keys into GitHub, but I'm doing it to allow the students
+    to use the lecture app without getting their own key.
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyD6D1ea9d0hpYai3Cei9jJl35Wc66js8_Q</string>
+</resources>
