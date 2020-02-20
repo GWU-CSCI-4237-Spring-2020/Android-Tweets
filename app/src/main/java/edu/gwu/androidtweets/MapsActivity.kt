@@ -1,10 +1,12 @@
 package edu.gwu.androidtweets
 
+import android.content.Intent
 import android.location.Address
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -15,11 +17,25 @@ import org.jetbrains.anko.doAsync
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
+    private lateinit var confirm: Button
+
     private lateinit var mMap: GoogleMap
+
+    private var currentAddress: Address? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
+        confirm = findViewById(R.id.confirm)
+        confirm.setOnClickListener {
+            if (currentAddress != null) {
+                val tweetsIntent = Intent(this, TweetsActivity::class.java)
+                tweetsIntent.putExtra("address", currentAddress)
+                startActivity(tweetsIntent)
+            }
+        }
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
@@ -65,6 +81,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     Log.d("MapsActivity", "Received ${results.size} results")
                     val firstResult: Address = results.first()
                     val streetAddress = firstResult.getAddressLine(0)
+
+                    currentAddress = firstResult
 
                     runOnUiThread {
                         val marker = MarkerOptions().position(latLng).title(streetAddress)
