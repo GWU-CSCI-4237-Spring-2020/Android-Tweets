@@ -1,9 +1,12 @@
 package edu.gwu.androidtweets
 
+import android.location.Address
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import org.jetbrains.anko.doAsync
 
 class TweetsActivity : AppCompatActivity() {
 
@@ -13,18 +16,38 @@ class TweetsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tweets)
 
-        val currentLocation: String = intent.getStringExtra("LOCATION")
+        val currentAddress: Address = intent.getParcelableExtra("address")
 
-        title = getString(R.string.tweets_title, currentLocation)
+        title = getString(R.string.tweets_title, currentAddress.getAddressLine(0))
 
         recyclerView = findViewById(R.id.recyclerView)
 
         // Set the RecyclerView direction to vertical (the default)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        val tweets = getFakeTweets()
-        val adapter = TweetAdapter(tweets)
-        recyclerView.adapter = adapter
+        doAsync {
+            val twitterManager = TwitterManager()
+
+            try {
+                val tweets = twitterManager.retrieveTweets(
+                    latitude = currentAddress.latitude,
+                    longitude = currentAddress.longitude
+                )
+
+                runOnUiThread {
+                    val adapter = TweetAdapter(tweets)
+                    recyclerView.adapter = adapter
+                }
+            } catch (exception: Exception) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@TweetsActivity,
+                        "Failed to retrieve Tweets",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
     }
 
     fun getFakeTweets(): List<Tweet> {
