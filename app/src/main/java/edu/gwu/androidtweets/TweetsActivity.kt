@@ -25,20 +25,36 @@ class TweetsActivity : AppCompatActivity() {
         // Set the RecyclerView direction to vertical (the default)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
+        // Networking is required to happen on a background thread, especially since server response
+        // times can be long if the user has a poor internet connection.
         doAsync {
             val twitterManager = TwitterManager()
 
             try {
+                // Read our Twitter API key and secret from our XML file.
+                val apiKey = getString(R.string.twitter_key)
+                val apiSecret = getString(R.string.twitter_secret)
+
+                // Get an OAuth token -- all of Twitter's APIs are protected by OAuth
+                val oAuthToken = twitterManager.retrieveOAuthToken(
+                    apiKey = apiKey,
+                    apiSecret = apiSecret
+                )
+
+                // Use the OAuth token to call the Search Tweets API
                 val tweets = twitterManager.retrieveTweets(
+                    oAuthToken = oAuthToken,
                     latitude = currentAddress.latitude,
                     longitude = currentAddress.longitude
                 )
 
+                // Switch back to the UI Thread (required to update the UI)
                 runOnUiThread {
                     val adapter = TweetAdapter(tweets)
                     recyclerView.adapter = adapter
                 }
             } catch (exception: Exception) {
+                // Switch back to the UI Thread (required to update the UI)
                 runOnUiThread {
                     Toast.makeText(
                         this@TweetsActivity,

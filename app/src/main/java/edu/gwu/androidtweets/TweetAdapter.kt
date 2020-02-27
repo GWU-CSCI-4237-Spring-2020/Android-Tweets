@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.squareup.picasso.Picasso
 
 class TweetAdapter(val tweets: List<Tweet>) : RecyclerView.Adapter<TweetAdapter.ViewHolder>() {
 
@@ -24,7 +25,17 @@ class TweetAdapter(val tweets: List<Tweet>) : RecyclerView.Adapter<TweetAdapter.
         holder.handle.text = currentTweet.handle
         holder.content.text = currentTweet.content
 
-        // TODO -- load icon from currentTweet.iconUrl
+        // Uncomment to enable debug information
+        // Picasso.get().setIndicatorsEnabled(true)
+
+        if (currentTweet.iconUrl.isNotEmpty()) {
+            // Note: one thing we made sure is that the .iconUrl is using HTTPS (e.g. "https://...")
+            // Newer Android devices don't allow non-HTTPS (e.g. HTTP) traffic by default and the Twitter
+            // API returns both HTTPS and HTTP URLS for the profile picture.
+            Picasso.get()
+                .load(currentTweet.iconUrl)
+                .into(holder.icon)
+        }
     }
 
     // Return the total number of rows you expect your list to have
