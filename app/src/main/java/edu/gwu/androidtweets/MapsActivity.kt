@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import androidx.core.content.ContextCompat
 
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -77,6 +78,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     listOf<Address>()
                 }
 
+                // We'll just take the first result we get back
                 if (results.isNotEmpty()) {
                     Log.d("MapsActivity", "Received ${results.size} results")
                     val firstResult: Address = results.first()
@@ -84,12 +86,27 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     currentAddress = firstResult
 
+                    // Switch back to the UI Thread (required to update the UI)
                     runOnUiThread {
                         val marker = MarkerOptions().position(latLng).title(streetAddress)
                         mMap.addMarker(marker)
+                        updateConfirmButton(firstResult)
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Flip our Confirm button from red to green, show the check icon, and display the address.
+     */
+    private fun updateConfirmButton(address: Address) {
+        confirm.text = address.getAddressLine(0)
+
+        val greenColor = ContextCompat.getColor(this, R.color.colorPrimary)
+        val checkImage = ContextCompat.getDrawable(this, R.drawable.ic_check_white)
+
+        confirm.setBackgroundColor(greenColor)
+        confirm.setCompoundDrawablesRelativeWithIntrinsicBounds(checkImage, null, null, null)
     }
 }

@@ -13,5 +13,6 @@
 .externalNativeBuild
 .cxx
 
-#Normally you would have uncommented this to allow the XML file to not be tracked by git
+#Normally you would have uncommented this to allow the XML files to not be tracked by git
 #google_maps_api.xml
+#twitter_keys.xml
