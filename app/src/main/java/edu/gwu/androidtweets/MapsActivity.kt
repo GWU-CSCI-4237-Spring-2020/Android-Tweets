@@ -20,6 +20,8 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import org.jetbrains.anko.doAsync
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -37,6 +39,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
+        val currentUser: FirebaseUser = FirebaseAuth.getInstance().currentUser!!
+        val email = currentUser.email
+        title = getString(R.string.welcome, email)
 
         locationProvider = LocationServices.getFusedLocationProviderClient(this)
 

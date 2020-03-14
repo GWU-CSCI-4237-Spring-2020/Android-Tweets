@@ -2,19 +2,28 @@ package edu.gwu.androidtweets
 
 import android.location.Address
 import android.os.Bundle
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.jetbrains.anko.doAsync
 
 class TweetsActivity : AppCompatActivity() {
+
+    private lateinit var tweetContent: EditText
+
+    private lateinit var addTweet: FloatingActionButton
 
     private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tweets)
+
+        tweetContent = findViewById(R.id.tweet_content)
+        addTweet = findViewById(R.id.add_tweet)
 
         val currentAddress: Address = intent.getParcelableExtra("address")
 
@@ -54,6 +63,7 @@ class TweetsActivity : AppCompatActivity() {
                     recyclerView.adapter = adapter
                 }
             } catch (exception: Exception) {
+                exception.printStackTrace()
                 // Switch back to the UI Thread (required to update the UI)
                 runOnUiThread {
                     Toast.makeText(
