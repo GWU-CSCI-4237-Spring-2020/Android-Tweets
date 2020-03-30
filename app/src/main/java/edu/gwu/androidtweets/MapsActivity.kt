@@ -20,6 +20,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import org.jetbrains.anko.doAsync
@@ -34,11 +35,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
 
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
     private var currentAddress: Address? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         val currentUser: FirebaseUser = FirebaseAuth.getInstance().currentUser!!
         val email = currentUser.email
@@ -48,6 +53,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         currentLocation = findViewById(R.id.current_location)
         currentLocation.setOnClickListener {
+            firebaseAnalytics.logEvent("current_location_clicked", null)
             checkPermissions()
         }
 
@@ -68,6 +74,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
+            firebaseAnalytics.logEvent("location_retrieved", null)
+
             // We only want a single update, so unregister (e.g. turn the GPS off) after we get one
             locationProvider.removeLocationUpdates(this)
 
@@ -98,10 +106,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val permissionState: Int = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         if (permissionState == PackageManager.PERMISSION_GRANTED) {
             // Permission granted - we can now access the GPS
+            firebaseAnalytics.logEvent("permission_location_already_granted", null)
             useCurrentLocation()
         } else {
             // Permission has not been granted
             // Ask for the permission
+            firebaseAnalytics.logEvent("permission_location_needed", null)
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -122,11 +132,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (requestCode == 200) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // User granted GPS permission, so we can get the current location
+                firebaseAnalytics.logEvent("permission_location_granted", null)
                 useCurrentLocation()
             } else {
                 // User denied the GPS permission (or we had an automatic denial by the system)
                 // In this case, this is *fine* since this is not a critical permission, so we'll just show a Toast
                 // See Lecture 8 for other ways you can handle permission denial
+                firebaseAnalytics.logEvent("permission_location_denied", null)
                 Toast.makeText(
                     this,
                     "Permission denied: cannot use current location",
@@ -176,7 +188,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             // We'll just take the first result we get back
             if (results.isNotEmpty()) {
+                // Log an analytic with how many results were retrieved
+                val bundle = Bundle()
+                bundle.putInt("count", results.size)
+                firebaseAnalytics.logEvent("location_geocoded", bundle)
                 Log.d("MapsActivity", "Received ${results.size} results")
+
                 val firstResult: Address = results.first()
                 val streetAddress = firstResult.getAddressLine(0)
 
@@ -189,6 +206,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     mMap.addMarker(marker)
                     updateConfirmButton(firstResult)
                 }
+            } else {
+                firebaseAnalytics.logEvent("location_no_geocode_results", null)
             }
         }
     }

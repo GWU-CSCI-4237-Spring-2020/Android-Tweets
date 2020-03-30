@@ -14,6 +14,7 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.Toast
 import com.google.android.gms.tasks.Task
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.*
 import java.lang.Exception
 
@@ -39,6 +40,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var firebaseAuth: FirebaseAuth
 
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
     private lateinit var username: EditText
 
     private lateinit var password: EditText
@@ -53,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         firebaseAuth = FirebaseAuth.getInstance()
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         val preferences: SharedPreferences = getSharedPreferences(
             "android-tweets",
@@ -71,6 +75,8 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
 
         signUp.setOnClickListener {
+            firebaseAnalytics.logEvent("signup_clicked", null)
+
             // Save user credentials to file
             val inputtedUsername: String = username.text.toString()
             val inputtedPassword: String = password.text.toString()
@@ -79,6 +85,8 @@ class MainActivity : AppCompatActivity() {
                 .createUserWithEmailAndPassword(inputtedUsername, inputtedPassword)
                 .addOnCompleteListener { task: Task<AuthResult> ->
                     if (task.isSuccessful) {
+                        firebaseAnalytics.logEvent("signup_success", null)
+
                         val currentUser: FirebaseUser = firebaseAuth.currentUser!!
                         val email = currentUser.email
 
@@ -88,6 +96,8 @@ class MainActivity : AppCompatActivity() {
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
+                        firebaseAnalytics.logEvent("signup_failed", null)
+
                         val exception = task.exception!!
                         Toast.makeText(
                             this,
@@ -110,7 +120,11 @@ class MainActivity : AppCompatActivity() {
             firebaseAuth
                 .signInWithEmailAndPassword(inputtedUsername, inputtedPassword)
                 .addOnCompleteListener { task: Task<AuthResult> ->
+                    firebaseAnalytics.logEvent("login_clicked", null)
+
                     if (task.isSuccessful) {
+                        firebaseAnalytics.logEvent("login_success", null)
+
                         val currentUser: FirebaseUser = firebaseAuth.currentUser!!
                         val email = currentUser.email
 
@@ -131,6 +145,17 @@ class MainActivity : AppCompatActivity() {
                         startActivity(intent)
                     } else {
                         val exception = task.exception!!
+                        val errorType = if (exception is FirebaseAuthInvalidCredentialsException) {
+                            "invalid_credentials"
+                        } else {
+                            "unknown_error"
+                        }
+
+                        // Track an analytic with the specific failure reason
+                        val bundle = Bundle()
+                        bundle.putString("error_type", errorType)
+                        firebaseAnalytics.logEvent("login_failed", bundle)
+
                         Toast.makeText(
                             this,
                             "Failed to sign in: $exception!",
