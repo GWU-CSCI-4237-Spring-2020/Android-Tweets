@@ -5,4 +5,7 @@ data class Tweet(
     val handle: String,
     val content: String,
     val iconUrl: String
-)
+) {
+    // Required by Firebase DB when using getValue on data retrieved from the DB
+    constructor() : this("", "", "", "")
+}
