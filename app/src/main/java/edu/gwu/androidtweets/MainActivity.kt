@@ -1,8 +1,13 @@
 package edu.gwu.androidtweets
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.location.Address
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
@@ -13,10 +18,15 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.TaskStackBuilder
 import com.google.android.gms.tasks.Task
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.*
 import java.lang.Exception
+import java.util.*
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
@@ -85,6 +95,8 @@ class MainActivity : AppCompatActivity() {
                 .createUserWithEmailAndPassword(inputtedUsername, inputtedPassword)
                 .addOnCompleteListener { task: Task<AuthResult> ->
                     if (task.isSuccessful) {
+                        showNewUserNotification()
+
                         firebaseAnalytics.logEvent("signup_success", null)
 
                         val currentUser: FirebaseUser = firebaseAuth.currentUser!!
@@ -181,6 +193,64 @@ class MainActivity : AppCompatActivity() {
         username.setText(savedUsername)
         password.setText(savedPassword)
     }
+
+    private fun showNewUserNotification() {
+        createNotificationChannel()
+
+        // Send user to the MainActivity
+        val mainIntent = Intent(this, MainActivity::class.java)
+        mainIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        val mainPendingIntent = PendingIntent.getActivity(this, 0, mainIntent, 0)
+
+        // Send user to the TweetsActivity (and prepare the Maps & Main Activities behind it)
+        val address = Address(Locale.getDefault())
+        address.adminArea = "California"
+
+        val tweetsIntent = Intent(this, TweetsActivity::class.java)
+        tweetsIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
+        tweetsIntent.putExtra("address", address)
+
+        val taskBuilder = TaskStackBuilder.create(this)
+        taskBuilder.addNextIntentWithParentStack(tweetsIntent)
+
+        val tweetsPendingIntent = taskBuilder.getPendingIntent(
+            0,
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val builder = NotificationCompat.Builder(this, "default")
+            .setSmallIcon(R.drawable.ic_check_white)
+            .setContentTitle("Android Tweets")
+            .setContentText("Welcome to Android Tweets!")
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("To get started, log into the app and choose a location on the Map. You can either long press on the Map or press the button to use your current location. The app will then retrieve Tweets containing the word 'Android' near the location!")
+            )
+            .setContentIntent(mainPendingIntent)
+            .addAction(0, "Go to California", tweetsPendingIntent)
+            .setAutoCancel(true)
+
+        NotificationManagerCompat.from(this).notify(0, builder.build())
+    }
+
+    private fun createNotificationChannel() {
+        // Only needed for Android Oreo and higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Default Notifications"
+            val descriptionText = "The app's default notification set"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+
+            val channel = NotificationChannel("default", name, importance)
+            channel.description = descriptionText
+
+            // Register the channel with the system
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
 
     // Another example of explicitly implementing an interface (TextWatcher). We cannot use
     // a lambda in this case since there are multiple (3) functions we need to implement.
