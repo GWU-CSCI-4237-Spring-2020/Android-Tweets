@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
 
         signUp.setOnClickListener {
-            firebaseAnalytics.logEvent("signup_clicked", null)
+            firebaseAnalytics.logEvent(Analytics.SignUp.CLICKED, null)
 
             // Save user credentials to file
             val inputtedUsername: String = username.text.toString()
@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
                 .createUserWithEmailAndPassword(inputtedUsername, inputtedPassword)
                 .addOnCompleteListener { task: Task<AuthResult> ->
                     if (task.isSuccessful) {
-                        firebaseAnalytics.logEvent("signup_success", null)
+                        firebaseAnalytics.logEvent(Analytics.SignUp.SUCCESS, null)
 
                         val currentUser: FirebaseUser = firebaseAuth.currentUser!!
                         val email = currentUser.email
@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
-                        firebaseAnalytics.logEvent("signup_failed", null)
+                        firebaseAnalytics.logEvent(Analytics.SignUp.FAILED, null)
 
                         val exception = task.exception!!
                         Toast.makeText(
@@ -120,10 +120,10 @@ class MainActivity : AppCompatActivity() {
             firebaseAuth
                 .signInWithEmailAndPassword(inputtedUsername, inputtedPassword)
                 .addOnCompleteListener { task: Task<AuthResult> ->
-                    firebaseAnalytics.logEvent("login_clicked", null)
+                    firebaseAnalytics.logEvent(Analytics.Login.CLICKED, null)
 
                     if (task.isSuccessful) {
-                        firebaseAnalytics.logEvent("login_success", null)
+                        firebaseAnalytics.logEvent(Analytics.Login.SUCCESS, null)
 
                         val currentUser: FirebaseUser = firebaseAuth.currentUser!!
                         val email = currentUser.email
@@ -136,8 +136,8 @@ class MainActivity : AppCompatActivity() {
 
                         preferences
                             .edit()
-                            .putString("username", inputtedUsername)
-                            .putString("password", inputtedPassword)
+                            .putString(SharedPrefsKeys.KEY_USERNAME, inputtedUsername)
+                            .putString(SharedPrefsKeys.KEY_PASSWORD, inputtedPassword)
                             .apply()
 
                         // An Intent is used to start a new Activity and also send data to it (via `putExtra(...)`)
@@ -146,15 +146,15 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         val exception = task.exception!!
                         val errorType = if (exception is FirebaseAuthInvalidCredentialsException) {
-                            "invalid_credentials"
+                            Analytics.Login.ERROR_INVALID_CREDENTIALS
                         } else {
-                            "unknown_error"
+                            Analytics.Login.ERROR_UNKNOWN
                         }
 
                         // Track an analytic with the specific failure reason
                         val bundle = Bundle()
-                        bundle.putString("error_type", errorType)
-                        firebaseAnalytics.logEvent("login_failed", bundle)
+                        bundle.putString(Analytics.Login.ERROR_BUNDLE_KEY, errorType)
+                        firebaseAnalytics.logEvent(Analytics.Login.FAILED, bundle)
 
                         Toast.makeText(
                             this,
@@ -172,8 +172,8 @@ class MainActivity : AppCompatActivity() {
         username.addTextChangedListener(textWatcher)
         password.addTextChangedListener(textWatcher)
 
-        val savedUsername = preferences.getString("username", "")
-        val savedPassword = preferences.getString("password", "")
+        val savedUsername = preferences.getString(SharedPrefsKeys.KEY_USERNAME, "")
+        val savedPassword = preferences.getString(SharedPrefsKeys.KEY_PASSWORD, "")
 
         // By calling setText now, *after* having called addTextChangedListener above, causes my TextWatcher
         // code to execute. This is useful because it runs the logic to enable / disable the Login button,

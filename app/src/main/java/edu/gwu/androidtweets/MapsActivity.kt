@@ -53,7 +53,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         currentLocation = findViewById(R.id.current_location)
         currentLocation.setOnClickListener {
-            firebaseAnalytics.logEvent("current_location_clicked", null)
+            firebaseAnalytics.logEvent(Analytics.Location.CURRENT_LOCATION_CLICKED, null)
             checkPermissions()
         }
 
@@ -61,7 +61,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         confirm.setOnClickListener {
             if (currentAddress != null) {
                 val tweetsIntent = Intent(this, TweetsActivity::class.java)
-                tweetsIntent.putExtra("address", currentAddress)
+                tweetsIntent.putExtra(IntentKeys.KEY_ADDRESS, currentAddress)
                 startActivity(tweetsIntent)
             }
         }
@@ -74,7 +74,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            firebaseAnalytics.logEvent("location_retrieved", null)
+            firebaseAnalytics.logEvent(Analytics.Location.RETRIEVED, null)
 
             // We only want a single update, so unregister (e.g. turn the GPS off) after we get one
             locationProvider.removeLocationUpdates(this)
@@ -106,12 +106,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val permissionState: Int = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         if (permissionState == PackageManager.PERMISSION_GRANTED) {
             // Permission granted - we can now access the GPS
-            firebaseAnalytics.logEvent("permission_location_already_granted", null)
+            firebaseAnalytics.logEvent(Analytics.Location.PERMISSION_ALREADY_GRANTED, null)
             useCurrentLocation()
         } else {
             // Permission has not been granted
             // Ask for the permission
-            firebaseAnalytics.logEvent("permission_location_needed", null)
+            firebaseAnalytics.logEvent(Analytics.Location.PERMISSION_NEEDED, null)
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -132,13 +132,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (requestCode == 200) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // User granted GPS permission, so we can get the current location
-                firebaseAnalytics.logEvent("permission_location_granted", null)
+                firebaseAnalytics.logEvent(Analytics.Location.PERMISSION_GRANTED, null)
                 useCurrentLocation()
             } else {
                 // User denied the GPS permission (or we had an automatic denial by the system)
                 // In this case, this is *fine* since this is not a critical permission, so we'll just show a Toast
                 // See Lecture 8 for other ways you can handle permission denial
-                firebaseAnalytics.logEvent("permission_location_denied", null)
+                firebaseAnalytics.logEvent(Analytics.Location.PERMISSION_DENIED, null)
                 Toast.makeText(
                     this,
                     "Permission denied: cannot use current location",
@@ -191,7 +191,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Log an analytic with how many results were retrieved
                 val bundle = Bundle()
                 bundle.putInt("count", results.size)
-                firebaseAnalytics.logEvent("location_geocoded", bundle)
+                firebaseAnalytics.logEvent(Analytics.Geocoder.SUCCESS, bundle)
                 Log.d("MapsActivity", "Received ${results.size} results")
 
                 val firstResult: Address = results.first()
@@ -207,7 +207,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     updateConfirmButton(firstResult)
                 }
             } else {
-                firebaseAnalytics.logEvent("location_no_geocode_results", null)
+                firebaseAnalytics.logEvent(Analytics.Geocoder.NO_RESULTS, null)
             }
         }
     }
