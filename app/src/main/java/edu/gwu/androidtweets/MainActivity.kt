@@ -52,13 +52,19 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var progressBar: ProgressBar
 
+    private lateinit var shakeManager: ShakeManager
+
+    private lateinit var preferences: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        shakeManager = ShakeManager(this)
 
         firebaseAuth = FirebaseAuth.getInstance()
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
-        val preferences: SharedPreferences = getSharedPreferences(
+        preferences = getSharedPreferences(
             "android-tweets",
             Context.MODE_PRIVATE
         )
@@ -116,53 +122,7 @@ class MainActivity : AppCompatActivity() {
             // Save user credentials to file
             val inputtedUsername: String = username.text.toString()
             val inputtedPassword: String = password.text.toString()
-
-            firebaseAuth
-                .signInWithEmailAndPassword(inputtedUsername, inputtedPassword)
-                .addOnCompleteListener { task: Task<AuthResult> ->
-                    firebaseAnalytics.logEvent("login_clicked", null)
-
-                    if (task.isSuccessful) {
-                        firebaseAnalytics.logEvent("login_success", null)
-
-                        val currentUser: FirebaseUser = firebaseAuth.currentUser!!
-                        val email = currentUser.email
-
-                        Toast.makeText(
-                            this,
-                            "Signed in as $email!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        preferences
-                            .edit()
-                            .putString("username", inputtedUsername)
-                            .putString("password", inputtedPassword)
-                            .apply()
-
-                        // An Intent is used to start a new Activity and also send data to it (via `putExtra(...)`)
-                        val intent: Intent = Intent(this, MapsActivity::class.java)
-                        startActivity(intent)
-                    } else {
-                        val exception = task.exception!!
-                        val errorType = if (exception is FirebaseAuthInvalidCredentialsException) {
-                            "invalid_credentials"
-                        } else {
-                            "unknown_error"
-                        }
-
-                        // Track an analytic with the specific failure reason
-                        val bundle = Bundle()
-                        bundle.putString("error_type", errorType)
-                        firebaseAnalytics.logEvent("login_failed", bundle)
-
-                        Toast.makeText(
-                            this,
-                            "Failed to sign in: $exception!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
+            login(inputtedUsername, inputtedPassword)
         }
 
         // Kotlin shorthand for login.setEnabled(false).
@@ -180,6 +140,72 @@ class MainActivity : AppCompatActivity() {
         // so that it will be enabled if I fill the username / password from SharedPreferences.
         username.setText(savedUsername)
         password.setText(savedPassword)
+    }
+
+    private fun login(username: String, password: String) {
+        firebaseAuth
+            .signInWithEmailAndPassword(username, password)
+            .addOnCompleteListener { task: Task<AuthResult> ->
+                firebaseAnalytics.logEvent("login_clicked", null)
+
+                if (task.isSuccessful) {
+                    firebaseAnalytics.logEvent("login_success", null)
+
+                    val currentUser: FirebaseUser = firebaseAuth.currentUser!!
+                    val email = currentUser.email
+
+                    Toast.makeText(
+                        this,
+                        "Signed in as $email!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    preferences
+                        .edit()
+                        .putString("username", username)
+                        .putString("password", password)
+                        .apply()
+
+                    // An Intent is used to start a new Activity and also send data to it (via `putExtra(...)`)
+                    val intent: Intent = Intent(this, MapsActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    val exception = task.exception!!
+                    val errorType = if (exception is FirebaseAuthInvalidCredentialsException) {
+                        "invalid_credentials"
+                    } else {
+                        "unknown_error"
+                    }
+
+                    // Track an analytic with the specific failure reason
+                    val bundle = Bundle()
+                    bundle.putString("error_type", errorType)
+                    firebaseAnalytics.logEvent("login_failed", bundle)
+
+                    Toast.makeText(
+                        this,
+                        "Failed to sign in: $exception!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        shakeManager.detectShakes {
+            Log.d("MainActivity", "Shake detected!")
+            shakeManager.stopDetectingShakes()
+
+            // Login with some guest account
+            login("guest@gwu.edu", "abcd123")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        shakeManager.stopDetectingShakes()
     }
 
     // Another example of explicitly implementing an interface (TextWatcher). We cannot use
